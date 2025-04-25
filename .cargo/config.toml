@@ -1,0 +1,14 @@
+[build]
+# Our MBR code will be run in real mode, which is a 16 bit environment, and so
+# we will have to create a custom target to match.
+# Most of the fields in the target specification should be self explanatory.
+# The data-layout field is given by a default value for the llvm-target.
+target = "x86-unknown-mbr.json"
+
+[unstable]
+# Since we are using a custom target, we will have to build core ourselves.
+build-std = ["core"]
+
+[target.'cfg(target_os = "mbr")']
+# This lets us run qemu with a `cargo run` command!
+runner = "qemu-system-i386 -hda"
