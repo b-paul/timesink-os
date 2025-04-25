@@ -1,0 +1,25 @@
+[package]
+name = "timesink-os"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "timesink-os"
+path = "src/main.rs"
+# This is necessary to rust-analyzer to stop from complaining about a missing
+# test crate
+test = false
+doctest = false
+bench = false
+
+[profile.dev]
+# "Unwinding panics are not supported without std" according to cargo
+panic = "abort"
+# We need to optimize for binary size since the MBR need to fit in 510 bytes!
+# This thing does not compile without opt level s on debug
+opt-level = "s"
+
+[profile.release]
+panic = "abort"
+
+[dependencies]
