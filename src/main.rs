@@ -1,6 +1,6 @@
-//! This crate is for an MBR image that can be booted from by a BIOS (or qemu).
-//!
-//! Currently we don't do anything on boot but print some letters but that will change soon!
+//! This is a bootloader for a kernel that I have yet to write. What this bootloader will do is
+//! find out stuff accessible with bios interrupts and store them somewhere, turn on protected
+//! mode, load the kernel into memory, then jump to it.
 
 #![no_std]
 #![no_main]
@@ -8,28 +8,9 @@
 use core::arch::{asm, global_asm};
 use core::panic::PanicInfo;
 
-global_asm!(
-    "
-# Mark the boot section as allocatable, writable and executable.
-.section .boot, \"awx\"
-.global _start
-.code16
-
-_start:
-    # initialise registers
-    xor ax, ax
-    mov ds, ax
-    mov ss, ax
-    mov sp, 0x7c00
-    cld
-
-    # Jump to our rust code
-    call boot
-
-    hang:
-        jmp hang
-"
-);
+// This contains the master boot record, whihc is what we get booted into! It loads this rust
+// program into memory, then jumps to the `boot` function.
+global_asm!(include_str!("mbr.S"));
 
 // TODO I am unsure what encoding scheme we can assume is used. It appears to be an extension of
 // ascii though, like codepage 437.
@@ -50,7 +31,7 @@ fn print(c: u8) {
 }
 
 /// Print an 8 bit number in decimal.
-fn print_num(n: u8) {
+pub extern "C" fn print_num(n: u8) {
     if n >= 100 {
         print(b'0' + n / 100);
     }
