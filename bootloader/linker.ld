@@ -1,6 +1,4 @@
-/* We output a binary which gets booted by QEMU. In the future it may be
- * preferable to emit an elf that gets linked with later sections of the
- * booting process / with the kernel. */
+/* We output a binary which gets booted by QEMU. */
 OUTPUT_FORMAT(binary)
 
 ENTRY(_start)
@@ -21,7 +19,7 @@ SECTIONS
     _partition_boot_sectors = 0x7d80;
     .partitions.boot_sectors : {
         /* TODO modify this region with a build script */
-        QUAD(1)
+        QUAD(0)
     }
     _partitions_kernel_addr = 0x7d88;
     .partitions.kernel_addr : {

@@ -1,6 +1,6 @@
 [build]
-# Our MBR code will be run in real mode, which is a 16 bit environment, and so
-# we will have to create a custom target to match.
+# Our bootloader code will be run in real mode, which is a 16 bit environment,
+# and so we will have to create a custom target to match.
 # Most of the fields in the target specification should be self explanatory.
 # The data-layout field is given by a default value for the llvm-target.
 target = "x86-unknown-bootloader.json"
