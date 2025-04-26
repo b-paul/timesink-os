@@ -31,7 +31,7 @@ fn print(c: u8) {
 }
 
 /// Print an 8 bit number in decimal.
-pub extern "C" fn print_num(n: u8) {
+fn print_num(n: u8) {
     if n >= 100 {
         print(b'0' + n / 100);
     }
