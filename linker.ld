@@ -14,6 +14,24 @@ SECTIONS
      * past the first 512 bytes into memory, then jumps to it */
     .mbr : { *(.mbr .mbr.*) }
 
+    /* Here we store the partition information for the rest of the bootloader,
+     * and the kernel itself. We will modify its values at build time, but they
+     * will be initialised to 0. */
+    . = 0x7d80;
+    _partition_boot_sectors = 0x7d80;
+    .partitions.boot_sectors : {
+        /* TODO modify this region with a build script */
+        QUAD(1)
+    }
+    _partitions_kernel_addr = 0x7d88;
+    .partitions.kernel_addr : {
+        QUAD(0)
+    }
+    _partitions_kernel_sectors = 0x7d90;
+    .partitions.kernel_sectors : {
+        QUAD(0)
+    }
+
     /* The BIOS may check for these two magic bytes at the end of the block to
      * determine that it is bootable. */
     . = 0x7c00 + 510;
