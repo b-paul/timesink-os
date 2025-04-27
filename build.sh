@@ -10,11 +10,11 @@ int_to_bytes() {
 }
 
 # Build the bootloader, it will be stored at ./target/x86-unknown-bootloader/bootloader/bootloader as a raw binary.
-cargo b --profile bootloader -p bootloader --target bootloader/x86-unknown-bootloader.json -Zbuild-std=core
+cargo b --profile bootloader -p bootloader --target bootloader/x86-unknown-bootloader.json -Zbuild-std=core || exit
 
 # Build the kernel, it will be stored at ./target/x86_64-unknown-none/debug/kernel
 # TODO handle release mode
-cargo b -p kernel --target x86_64-unknown-none
+cargo b -p kernel --target x86_64-unknown-none || exit
 # Copy the kernel into a binary for creating the image
 # idk if it should be elf32-i386 feels wrong
 objcopy -I elf32-i386 -O binary target/x86_64-unknown-none/debug/kernel target/kernel.bin
