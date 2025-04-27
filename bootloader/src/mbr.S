@@ -12,6 +12,9 @@ _start:
     cld
     cli
 
+    # Load the gdt
+    lgdt [gdtr]
+
     # Our goal at the moment is to load the rest of the boot loader into
     # memory and jump to it. We will use the disk reading BIOS interrupts
     # to do this.
@@ -48,6 +51,24 @@ success:
 
     hang:
         jmp hang
+
+gdtr:
+    .2byte (gdt_end - gdt  - 1) # size of gdt (minus 1 for some reason)
+    .4byte gdt # offset of the gdt
+
+gdt:
+    .8byte 0 # entry 0 is null
+    # We don't really want to support proper segmentation in the bootloader,
+    #the kernel can do that when it wants to. We do still need to set up a gdt
+    # though, to get into protected mode. We have to make entries for code and
+    # data segments, and we will make simple entries with little restrictions.
+    # We have the base set to 0, and the limit set to 0xfffff. We also use the
+    # granularity 4kb flag, so this is 0xfffff 4kb blocks as the limit. Hence
+    # all of memory fits into these sectors. TODO I can't be bothered to
+    # document the rest of this lol it's not that important
+    .8byte 0x00cf9b000000ff # code segment
+    .8byte 0x00cf9f000000ff # data segment
+gdt_end:
 
 .global _partition_boot_sectors
 

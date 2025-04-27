@@ -33,7 +33,7 @@ dd if=./target/x86-unknown-bootloader/bootloader/bootloader of=./target/image.bi
 dd if=./target/kernel.bin of=./target/image.bin conv=notrunc bs=512 seek=128
 # We write the amount of sectors into the partition table of the bootloader
 int_to_bytes $bootloader_sectors | dd of=./target/image.bin conv=notrunc bs=1 seek=384
-int_to_bytes 0x100000 | dd of=./target/image.bin conv=notrunc bs=1 seek=400 # idk random memory offset i might change it later
+int_to_bytes 0x100000 | dd of=./target/image.bin conv=notrunc bs=1 seek=392 # idk random memory offset i might change it later
 int_to_bytes $kernel_sectors | dd of=./target/image.bin conv=notrunc bs=1 seek=400
 
 # Now you can run the image with `qemu-system-i386 -hda target/image.bin`!!
