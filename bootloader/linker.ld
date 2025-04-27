@@ -17,16 +17,16 @@ SECTIONS
      * will be initialised to 0. */
     . = 0x7d80;
     _partition_boot_sectors = 0x7d80;
-    .partitions.boot_sectors : {
+    .partition.boot_sectors : {
         /* TODO modify this region with a build script */
         QUAD(0)
     }
-    _partitions_kernel_addr = 0x7d88;
-    .partitions.kernel_addr : {
+    _partition_kernel_addr = 0x7d88;
+    .partition.kernel_addr : {
         QUAD(0)
     }
-    _partitions_kernel_sectors = 0x7d90;
-    .partitions.kernel_sectors : {
+    _partition_kernel_sectors = 0x7d90;
+    .partition.kernel_sectors : {
         QUAD(0)
     }
 
