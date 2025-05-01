@@ -15,11 +15,12 @@ pub fn print_byte(c: u8) {
             "mov bh, 0",
             "int 0x10",
             "pop bx",
-            in(reg_byte) c
+            in(reg_byte) c,
+            out("ax") _,
+            // We can't out("bx"), _ since llvm uses it or something (rust complains)
         )
     }
 }
-
 
 /// A ZST that implements the Write trait that writes to the framebuffer with BIOS interrupts.
 pub struct BiosWriter;
@@ -29,7 +30,9 @@ impl fmt::Write for BiosWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for b in s.bytes() {
             // yeah don't feel like \r ing everything
-            if b == b'\n' { print_byte(b'\r'); }
+            if b == b'\n' {
+                print_byte(b'\r');
+            }
             print_byte(b);
         }
         Ok(())
