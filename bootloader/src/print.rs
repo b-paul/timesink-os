@@ -40,6 +40,16 @@ impl fmt::Write for BiosWriter {
 }
 
 // These print and println macros are half stolen from the standard library
+/// Prints to the screen using bios interrupts. Note that no new line will be printed, for such
+/// functionality, use the `println!` macro.
+///
+/// See `core::fmt` for format string usage.
+///
+/// # Examples
+/// ```
+/// print!("{} + {} =", 1, 1);
+/// println!("{}", 1 + 1);
+/// ```
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => {{
@@ -49,6 +59,16 @@ macro_rules! print {
     }};
 }
 
+/// Prints to the screen using bios interrupts, with a new line appended to the end.
+///
+/// See `core::fmt` for format string usage.
+///
+/// # Examples
+/// ```
+/// for i in 0..10 {
+///     println!("{i}");
+/// }
+/// ```
 #[macro_export]
 macro_rules! println {
     () => {
