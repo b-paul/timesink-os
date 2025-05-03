@@ -58,17 +58,11 @@ gdtr:
 
 gdt:
     .8byte 0 # entry 0 is null
-    # I think this is wrong TODO
-    # We don't really want to support proper segmentation in the bootloader,
-    # the kernel can do that when it wants to. We do still need to set up a gdt
-    # though, to get into protected mode. We have to make entries for code and
-    # data segments, and we will make simple entries with little restrictions.
-    # We have the base set to 0, and the limit set to 0xfffff. We also use the
-    # granularity 4kb flag, so this is 0xfffff 4kb blocks as the limit. Hence
-    # all of memory fits into these sectors. TODO I can't be bothered to
-    # document the rest of this lol it's not that important
-    .8byte 0x00cf9b000000ffff # code segment
-    .8byte 0x00cf9f000000ffff # idk
+    # We don't need code segmentation, so this gdt entry will exist solely to
+    # load the kernel into memory (so to be in unreal mode). This segment has
+    # basically all of the permissions necessary, and can access all of the 32
+    # bit address space.
+    .8byte 0x00cf9f000000ffff
 gdt_end:
 
 .global _partition_boot_sectors
