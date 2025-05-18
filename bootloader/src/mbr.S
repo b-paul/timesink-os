@@ -12,6 +12,15 @@ _start:
     cld
     cli
 
+    # dl is initialised to store the drive number of the drive we are booting
+    # from. We store it to be able to refer to it later.
+    mov _drive_number, dl
+
+    # Enable the A20 line
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+
     # Load the gdt
     lgdt [gdtr]
 
@@ -66,6 +75,7 @@ gdt:
 gdt_end:
 
 .global _partition_boot_sectors
+.global _drive_number
 
 .align 4
 .global dap
