@@ -32,12 +32,12 @@ pub fn enter_unreal_mode() {
 
     enter_protected_mode();
 
-    // Set bs to use the segment we created that can access full the 32 bit address space.
+    // Set ds to use the segment we created that can access full the 32 bit address space.
     // As stated on the OS dev wiki, the bits 3-15 in the segment registers correspond to gdt
     // entries when in protected mode, and for some reason when we set the segment and switch back
     // to real mode the information from this is preserved.
     unsafe {
-        asm!("push bx", "mov bx, 0x08", "mov ds, bx", "pop bx");
+        asm!("mov {0}, 0x08", "mov ds, {0}", out(reg) _);
     }
 
     exit_protected_mode();
@@ -46,4 +46,3 @@ pub fn enter_unreal_mode() {
         asm!("pop ds");
     }
 }
-

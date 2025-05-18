@@ -1,6 +1,3 @@
-/* We output a binary which gets booted by QEMU. */
-OUTPUT_FORMAT(binary)
-
 ENTRY(_start)
 
 SECTIONS
@@ -23,10 +20,18 @@ SECTIONS
     }
     _partition_kernel_addr = 0x7d88;
     .partition.kernel_addr : {
-        QUAD(0)
+        LONG(0)
+    }
+    _drive_number = 0x7d8c;
+    .partition.drive_number : {
+        BYTE(0)
     }
     _partition_kernel_sectors = 0x7d90;
     .partition.kernel_sectors : {
+        QUAD(0)
+    }
+    _partition_kernel_block = 0x7d98;
+    .partition.kernel_block : {
         QUAD(0)
     }
 
