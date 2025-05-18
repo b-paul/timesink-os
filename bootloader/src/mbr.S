@@ -67,11 +67,11 @@ gdtr:
 
 gdt:
     .8byte 0 # entry 0 is null
-    # We don't need code segmentation, so this gdt entry will exist solely to
-    # load the kernel into memory (so to be in unreal mode). This segment has
-    # basically all of the permissions necessary, and can access all of the 32
-    # bit address space.
+    # TODO fix docs
+    # Code segment first, then data segment. We give full access to everything
+    # in our segments!
     .8byte 0x00cf9f000000ffff
+    .8byte 0x00cf97000000ffff
 gdt_end:
 
 .global _partition_boot_sectors

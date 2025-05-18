@@ -56,10 +56,54 @@ pub extern "C" fn boot() {
         }
     }
 
-    // Next problem is figuring out where to jump to lol
-    //unsafe {
-    //core::mem::transmute::<_, extern "C" fn()>(_partition_kernel_addr as usize)();
-    //}
+    println!("Jumping!");
+
+    // TODO clean this up oh my god
+
+    // Now we actually jump to the kernel
+    // TODO enter long mode instead lol
+    modes::enter_protected_mode();
+    unsafe {
+        // The address needs to be loaded from memory before we set cs, hence we push it to the
+        // stack.
+        core::arch::asm!(
+            "push {entry:e}",
+            entry = in(reg) _partition_kernel_addr
+        );
+        // Set cs by doing a funny jump, at&t syntax is needed for some reason :(
+        core::arch::asm!("ljmp $0x8, $2f", "2:", options(att_syntax));
+        // Set the rest of the segment registers to the data segment
+        core::arch::asm!(
+            "mov {0:x}, 0x10",
+            "mov ds, {0:x}",
+            "mov ss, {0:x}",
+            "mov es, {0:x}",
+            "mov fs, {0:x}",
+            "mov gs, {0:x}",
+            out(reg) _,
+        );
+        // Get the kernel start address and call it!
+        // TODO THIS SHOULD NOT BE 16 BIT!!! SOMETHING IS VERY WRONG!!! A20 MIGHT NOT BE ENABLED OR
+        // MAYBE PROTECTED MODE IS BROKEN OR SOMETHING AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        core::arch::asm!(
+            "pop {0:x}",
+            "call {0:x}",
+            out(reg) _,
+        );
+    }
+    modes::exit_protected_mode();
+    unsafe {
+        core::arch::asm!(
+            "xor {0:x}, {0:x}",
+            "mov ds, {0:x}",
+            "mov ss, {0:x}",
+            "mov es, {0:x}",
+            "mov fs, {0:x}",
+            "mov gs, {0:x}",
+            out(reg) _,
+        );
+    }
+    println!("Returned!");
 
     loop {}
 }
@@ -70,7 +114,7 @@ fn read_kernel() {
     let mut cur_addr = unsafe { _partition_kernel_addr };
     let mut cur_block = unsafe { _partition_kernel_block };
 
-    println!("Reading {sectors_left} many blocks");
+    println!("Reading {sectors_left} blocks");
 
     while sectors_left > 0 {
         // We can load at most 0x7f sectors per packet.

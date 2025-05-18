@@ -7,16 +7,16 @@ use core::arch::asm;
 /// Enter protected mode. In protected mode, BIOS interrupts will be mostly disabled, so caution
 /// should be made so that no interrupts are executed. To exit, call `exit_protected_mode`.
 ///
-/// It is valid to call this function within protected mode in which case, nothing will happen.
+/// This function is always valid to call.
 pub fn enter_protected_mode() {
     unsafe {
         asm!("mov eax, cr0", "or eax, 1", "mov cr0, eax");
     }
 }
 
-/// Exit protected mode to reenter real mode. Within real mode, it is safe to call bios interrupts.
+/// Exit protected mode and reenter real mode, where BIOS interrupts are safe to call.
 ///
-/// It is valid to call this function within real mode, in which case nothing will happen.
+/// This function is always valid to call.
 pub fn exit_protected_mode() {
     unsafe {
         asm!("mov eax, cr0", "and eax, ~1", "mov cr0, eax");
@@ -37,7 +37,7 @@ pub fn enter_unreal_mode() {
     // entries when in protected mode, and for some reason when we set the segment and switch back
     // to real mode the information from this is preserved.
     unsafe {
-        asm!("mov {0}, 0x08", "mov ds, {0}", out(reg) _);
+        asm!("mov {0}, 0x10", "mov ds, {0}", out(reg) _);
     }
 
     exit_protected_mode();
@@ -45,4 +45,21 @@ pub fn enter_unreal_mode() {
     unsafe {
         asm!("pop ds");
     }
+}
+
+/// Enter long mode. In long mode, BIOS interrupts will be mostly disabled, so caution should be
+/// made so that no interrupts are executed. To exit, call `exit_long_mode`.
+///
+/// This function is always valid to call.
+#[allow(unused)]
+pub fn enter_long_mode() {
+    todo!()
+}
+
+/// Exit long mode and reenter real mode, where BIOS interrupts are safe to call.
+///
+/// This function is always valid to call.
+#[allow(unused)]
+pub fn exit_long_mode() {
+    todo!()
 }

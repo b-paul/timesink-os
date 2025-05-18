@@ -13,3 +13,8 @@ panic = "abort"
 # We need to optimize for binary size since the MBR need to fit in 510 bytes!
 # This thing does not compile without opt level s on debug
 opt-level = "s"
+
+[profile.dev]
+panic = "abort"
+# TODO WHY IS THIS REQUIRED????
+opt-level = "s"
