@@ -12,9 +12,9 @@ fn panic(_info: &PanicInfo) -> ! {
 
 #[unsafe(no_mangle)]
 #[inline(never)]
-extern "C" fn get_instruction_pointer() -> u64 {
-    let ip: u64;
-    unsafe { core::arch::asm!("pop rax", "mov {}, [rsp]", "push rax", out(reg) ip) }
+extern "C" fn get_instruction_pointer() -> u32 {
+    let ip: u32;
+    unsafe { core::arch::asm!("mov {}, [esp]", out(reg) ip) }
     ip
 }
 
@@ -27,7 +27,8 @@ pub extern "C" fn _start() {
         unsafe {
             //fb.offset(i).write(b' ' as u16);
             core::arch::asm!(
-                "ds mov WORD PTR [{0:e} + {0:e}*1 + 0xb8000], 0x0020",
+                "ds mov WORD PTR [{0:e}*2 + 0xb8000], 0x0020",
+                //"mov DWORD PTR ds:0xb8000, 0x0020",
                 in(reg) i
             )
         };
@@ -36,24 +37,20 @@ pub extern "C" fn _start() {
     // Print the instruction pointer
     let mut ip = get_instruction_pointer();
 
-    let mut x = 7;
-    while ip > 0 {
+    let mut x = 15i32;
+    for _ in 0..16u32 {
         let k = ip % 16;
         ip /= 16;
         let char = 0x07 << 8 | (k as u8 + b'0') as u16;
         unsafe {
-            //fb.offset(i).write(b' ' as u16);
             core::arch::asm!(
-                "mov {1:x}, {2:x}",
-                "ds mov WORD PTR [{0:e} + {0:e}*1 + 0xb8000], {1:x}",
+                "ds mov WORD PTR [{0:e}*2 + 0xb8000], {1:x}",
                 in(reg) x,
-                out(reg) _,
                 in(reg) char,
             )
         };
         x -= 1;
     }
-    // IT'S AT 0x00029??????? THAT'S NOT 0x100000!!! AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
     loop {}
 }
