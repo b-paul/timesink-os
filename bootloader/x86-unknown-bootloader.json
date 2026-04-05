@@ -5,6 +5,6 @@
     "linker": "rust-lld",
     "linker-flavor": "ld.lld",
     "llvm-target": "i386-unknown-none-code16",
-    "target-pointer-width": "32",
+    "target-pointer-width": 32,
     "os": "bootloader"
 }

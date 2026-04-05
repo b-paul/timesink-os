@@ -1,49 +1,112 @@
 //! Manage cpu states, such as protected mode, unreal mode and long mode.
 
 use core::arch::asm;
+use core::marker::PhantomData;
 
-// TODO should these be unsafe because of the unsafety that could come from running interrupts in
-// protected mode?
-/// Enter protected mode. In protected mode, BIOS interrupts will be mostly disabled, so caution
-/// should be made so that no interrupts are executed. To exit, call `exit_protected_mode`.
-///
-/// This function is always valid to call.
-pub fn enter_protected_mode() {
-    unsafe {
-        asm!("mov eax, cr0", "or eax, 1", "mov cr0, eax");
+struct Zst;
+
+pub struct RealMode {
+    _z: Zst,
+}
+
+use super::bios::BiosCaller;
+
+impl core::ops::Deref for RealMode {
+    type Target = BiosCaller;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*(self as *const RealMode as *const BiosCaller) }
     }
 }
 
-/// Exit protected mode and reenter real mode, where BIOS interrupts are safe to call.
-///
-/// This function is always valid to call.
-pub fn exit_protected_mode() {
-    unsafe {
-        asm!("mov eax, cr0", "and eax, ~1", "mov cr0, eax");
+pub struct UnrealMode {
+    _z: Zst,
+}
+
+impl core::ops::Deref for UnrealMode {
+    type Target = BiosCaller;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*(self as *const UnrealMode as *const BiosCaller) }
     }
 }
 
-/// Enter unreal mode, which will give us full access to the 32 bit address space, while still
-/// being able to call BIOS interrupts.
-pub fn enter_unreal_mode() {
-    unsafe {
-        asm!("push ds");
+pub struct ProtectedMode<U> {
+    _p: PhantomData<U>,
+}
+
+impl RealMode {
+    /// Acquire a witness of being in real mode, given from startup.
+    ///
+    /// # Safety
+    /// This function should only be called at the very start of the boot process, as then it is
+    /// guaranteed that we are in real mode.
+    pub unsafe fn begin() -> Self {
+        RealMode { _z: Zst }
     }
 
-    enter_protected_mode();
-
-    // Set ds to use the segment we created that can access full the 32 bit address space.
-    // As stated on the OS dev wiki, the bits 3-15 in the segment registers correspond to gdt
-    // entries when in protected mode, and for some reason when we set the segment and switch back
-    // to real mode the information from this is preserved.
-    unsafe {
-        asm!("mov {0}, 0x10", "mov ds, {0}", out(reg) _);
+    /// Exit real mode and enter protected mode.
+    pub fn enter_protected_mode(self) -> ProtectedMode<RealMode> {
+        unsafe {
+            asm!("mov eax, cr0", "or eax, 1", "mov cr0, eax");
+        }
+        ProtectedMode { _p: PhantomData }
     }
 
-    exit_protected_mode();
+    /// Enter unreal mode, which will give us full access to the 32 bit address space, while still
+    /// being able to call BIOS interrupts.
+    pub fn enter_unreal_mode(self) -> UnrealMode {
+        unsafe {
+            asm!("push ds");
+        }
 
-    unsafe {
-        asm!("pop ds");
+        let prot = self.enter_protected_mode();
+
+        // Set ds to use the segment we created that can access full the 32 bit address space.
+        // As stated on the OS dev wiki, the bits 3-15 in the segment registers correspond to gdt
+        // entries when in protected mode, and for some reason when we set the segment and switch back
+        // to real mode the information from this is preserved.
+        unsafe {
+            asm!("mov {0}, 0x10", "mov ds, {0}", out(reg) _);
+        }
+
+        let _ = prot.enter_real_mode();
+
+        unsafe {
+            asm!("pop ds");
+        }
+
+        UnrealMode { _z: Zst }
+    }
+}
+
+impl UnrealMode {
+    /// Exit real mode and enter protected mode.
+    pub fn enter_protected_mode(self) -> ProtectedMode<UnrealMode> {
+        unsafe {
+            asm!("mov eax, cr0", "or eax, 1", "mov cr0, eax");
+        }
+        ProtectedMode { _p: PhantomData }
+    }
+}
+
+impl ProtectedMode<RealMode> {
+    /// Exit protected mode and reenter real mode.
+    pub fn enter_real_mode(self) -> RealMode {
+        unsafe {
+            asm!("mov eax, cr0", "and eax, ~1", "mov cr0, eax");
+        }
+        RealMode { _z: Zst }
+    }
+}
+
+impl ProtectedMode<UnrealMode> {
+    /// Exit protected mode and reenter unreal mode.
+    pub fn enter_unreal_mode(self) -> UnrealMode {
+        unsafe {
+            asm!("mov eax, cr0", "and eax, ~1", "mov cr0, eax");
+        }
+        UnrealMode { _z: Zst }
     }
 }
 

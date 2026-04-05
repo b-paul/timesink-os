@@ -1,5 +1,7 @@
 //! Functionality for reading from the disk into memory.
 
+use super::BiosCaller;
+
 use core::arch::asm;
 
 unsafe extern "C" {
@@ -41,10 +43,11 @@ impl DiskAddressPacket {
             })
         }
     }
+}
 
+impl BiosCaller {
     /// Load the contents of the disk packet into memory.
-    #[inline(never)]
-    pub fn load(&self) {
+    pub fn load_dap(&self, dap: &DiskAddressPacket) {
         let mut _err: u16;
         unsafe {
             // Execute an EXTENDED READ interrupt. We have to push and pop si manually since it is
@@ -55,7 +58,7 @@ impl DiskAddressPacket {
             "mov dl, {1}",
             "int 0x13",
             "pop si",
-            in(reg) self as *const _ as usize,
+            in(reg) dap as *const _ as usize,
             in(reg_byte) _drive_number,
             out("ax") _err);
         }

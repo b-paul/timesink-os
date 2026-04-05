@@ -2,6 +2,8 @@
 //! find out stuff accessible with bios interrupts and store them somewhere, turn on protected
 //! mode, load the kernel into memory, then jump to it.
 
+// TODO references in docs
+
 #![no_std]
 #![no_main]
 #![deny(missing_docs)]
@@ -13,10 +15,9 @@ use core::panic::PanicInfo;
 // program into memory, then jumps to the `boot` function.
 global_asm!(include_str!("mbr.S"));
 
-mod disk;
+mod bios;
 pub mod mem_routines;
 mod modes;
-mod print;
 
 unsafe extern "C" {
     static _partition_boot_sectors: u32;
@@ -30,39 +31,40 @@ static mut DISK_BUF: [u8; 512 * 0x80] = [0u8; 512 * 0x80];
 /// Gets executed after initialisation in _start.
 #[unsafe(no_mangle)]
 pub extern "C" fn boot() {
-    println!("Hello, {}", "world!");
+    let real_mode = unsafe { modes::RealMode::begin() };
+    let mut w = real_mode.writer();
 
-    modes::enter_unreal_mode();
+    println!(w, "Hello, {}", "world!");
 
-    println!("Bootloader sectors: {:08x}", unsafe {
-        _partition_boot_sectors
-    });
-    println!("Kernel addr: {:08x}", unsafe { _partition_kernel_addr });
-    println!("Kernel sectors: {:08x}", unsafe {
-        _partition_kernel_sectors
-    });
-    println!("Kernel block index: {:08x}", unsafe {
-        _partition_kernel_block
-    });
+    // Before we load the kernel, it's a good idea to give ourselfs more than 1mb of memory
+    let unreal_mode = real_mode.enter_unreal_mode();
+    let mut w = unreal_mode.writer();
+
+    unsafe {
+        println!(w, "Bootloader sectors: {:08x}", _partition_boot_sectors);
+        println!(w, "Kernel addr: {:08x}", _partition_kernel_addr);
+        println!(w, "Kernel sectors: {:08x}", _partition_kernel_sectors);
+        println!(w, "Kernel block index: {:08x}", _partition_kernel_block);
+    }
 
     // Now we actually load the kernel into memory!
-    read_kernel();
+    read_kernel(&unreal_mode);
 
     // For now we'll print the first 128 bytes to check that we've read the correct thing.
     for i in 0..128 {
         unsafe {
             let b = *(_partition_kernel_addr as *const u8).offset(i);
-            print!("{b:02x} ");
+            print!(w, "{b:02x} ");
         }
     }
 
-    println!("Jumping!");
+    println!(w, "Jumping!");
 
     // TODO clean this up oh my god
 
     // Now we actually jump to the kernel
     // TODO enter long mode instead lol
-    modes::enter_protected_mode();
+    let prot = unreal_mode.enter_protected_mode();
     unsafe {
         // The address needs to be loaded from memory before we set cs, hence we push it to the
         // stack.
@@ -91,7 +93,8 @@ pub extern "C" fn boot() {
             out(reg) _,
         );
     }
-    modes::exit_protected_mode();
+    let unreal_mode = prot.enter_unreal_mode();
+    let mut w = unreal_mode.writer();
     unsafe {
         core::arch::asm!(
             "xor {0:x}, {0:x}",
@@ -103,18 +106,20 @@ pub extern "C" fn boot() {
             out(reg) _,
         );
     }
-    println!("Returned!");
+    println!(w, "Returned!");
 
     loop {}
 }
 
 /// Load the kernel from disk into memory.
-fn read_kernel() {
+fn read_kernel(unreal_mode: &modes::UnrealMode) {
+    let mut w = unreal_mode.writer();
+
     let mut sectors_left = unsafe { _partition_kernel_sectors } as i32;
     let mut cur_addr = unsafe { _partition_kernel_addr };
     let mut cur_block = unsafe { _partition_kernel_block };
 
-    println!("Reading {sectors_left} blocks");
+    println!(w, "Reading {sectors_left} blocks");
 
     while sectors_left > 0 {
         // We can load at most 0x7f sectors per packet.
@@ -126,7 +131,7 @@ fn read_kernel() {
         let addr = &raw mut DISK_BUF as u32;
         let offset = (addr & 0xf) as u16;
         let segment = (addr >> 4) as u16;
-        let packet = disk::DiskAddressPacket::new(
+        let packet = bios::disk::DiskAddressPacket::new(
             blocks_read.try_into().unwrap(),
             offset,
             segment,
@@ -134,7 +139,7 @@ fn read_kernel() {
         )
         .expect("Invalid disk packet was created");
 
-        packet.load();
+        unreal_mode.load_dap(&packet);
 
         unsafe {
             core::ptr::copy(
@@ -148,11 +153,14 @@ fn read_kernel() {
         cur_addr += blocks_read * 512;
         cur_block += blocks_read;
     }
-    println!("Finished reading blocks");
+    println!(w, "Finished reading blocks");
 }
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    println!("{info}");
+    // safety: i don't know what to do otherwise!!!
+    let real_mode = unsafe { modes::RealMode::begin() };
+    let mut w = real_mode.writer();
+    println!(w, "{info}");
     loop {}
 }
