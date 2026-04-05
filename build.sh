@@ -10,7 +10,7 @@ int_to_bytes() {
 }
 
 # Build the bootloader, it will be stored at ./target/x86-unknown-bootloader/bootloader/bootloader as an elf then copied as a raw binary.
-cargo b --profile bootloader -p bootloader --target bootloader/x86-unknown-bootloader.json -Zjson-target-spec -Zbuild-std=core || exit
+cargo b -p bootloader --target bootloader/x86-unknown-bootloader.json -Zjson-target-spec -Zbuild-std=core || exit
 objcopy -I elf32-i386 -O binary target/x86-unknown-bootloader/bootloader/bootloader target/bootloader.bin || exit
 
 # Build the kernel, it will be stored at ./target/x86_64-unknown-none/debug/kernel
