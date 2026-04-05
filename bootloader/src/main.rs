@@ -60,39 +60,11 @@ pub extern "C" fn boot() {
 
     println!(w, "Jumping!");
 
-    // TODO clean this up oh my god
-
     // Now we actually jump to the kernel
-    // TODO enter long mode instead lol
     let prot = unreal_mode.enter_protected_mode();
-    unsafe {
-        // The address needs to be loaded from memory before we set cs, hence we push it to the
-        // stack.
-        core::arch::asm!(
-            "push {entry:e}",
-            entry = in(reg) _partition_kernel_addr
-        );
-        // Set cs by doing a funny jump, at&t syntax is needed for some reason :(
-        core::arch::asm!("ljmp $0x8, $2f", "2:", options(att_syntax));
-        // Set the rest of the segment registers to the data segment
-        core::arch::asm!(
-            "mov {0:x}, 0x10",
-            "mov ds, {0:x}",
-            "mov ss, {0:x}",
-            "mov es, {0:x}",
-            "mov fs, {0:x}",
-            "mov gs, {0:x}",
-            out(reg) _,
-        );
-        // Get the kernel start address and call it!
-        // TODO THIS SHOULD NOT BE 16 BIT!!! SOMETHING IS VERY WRONG!!! A20 MIGHT NOT BE ENABLED OR
-        // MAYBE PROTECTED MODE IS BROKEN OR SOMETHING AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-        core::arch::asm!(
-            "pop {0:x}",
-            "call {0:x}",
-            out(reg) _,
-        );
-    }
+
+    jump_to_kernel(&prot);
+
     let unreal_mode = prot.enter_unreal_mode();
     let mut w = unreal_mode.writer();
     unsafe {
@@ -154,6 +126,44 @@ fn read_kernel(unreal_mode: &modes::UnrealMode) {
         cur_block += blocks_read;
     }
     println!(w, "Finished reading blocks");
+}
+
+/// Jump to the kernel address written in the partition table.
+fn jump_to_kernel<T>(_prot_mode: &modes::ProtectedMode<T>) {
+    // TODO clean this up oh my god
+    // TODO enter long mode
+    unsafe {
+        // The address needs to be loaded from memory before we set cs, hence we push it to the
+        // stack.
+        core::arch::asm!(
+            "push {entry:e}",
+            entry = in(reg) _partition_kernel_addr
+        );
+        // Set cs by doing a funny jump, at&t syntax is needed for some reason :(
+        // $2f means jump to the 2: label. after this instruction cs is set to the first argument
+        // of ljmp, and in protected mode it is then treated as an offset into the gdt (0x8 means
+        // index 1)
+        core::arch::asm!("ljmp $0x8, $2f", "2:", options(att_syntax));
+        // Set the rest of the segment registers to the data segment gdt entry (0x10 is index 2)
+        core::arch::asm!(
+            "mov {0:x}, 0x10",
+            "mov ds, {0:x}",
+            "mov ss, {0:x}",
+            "mov es, {0:x}",
+            "mov fs, {0:x}",
+            "mov gs, {0:x}",
+            out(reg) _,
+        );
+        // Get the kernel start address and call it!
+        core::arch::asm!(
+            "pop {0:e}",
+            // It's super cursed, but we have to write :x in the call parameter, and despite that
+            // it will use a 32 bit register in the call. If we write :e it compiles to use a 16
+            // bit register...
+            "call {0:x}",
+            out(reg) _,
+        );
+    }
 }
 
 #[panic_handler]
