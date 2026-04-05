@@ -10,13 +10,14 @@ int_to_bytes() {
 }
 
 # Build the bootloader, it will be stored at ./target/x86-unknown-bootloader/bootloader/bootloader as an elf then copied as a raw binary.
-cargo b --profile bootloader -p bootloader --target bootloader/x86-unknown-bootloader.json -Zbuild-std=core || exit
-objcopy -I elf32-i386 -O binary target/x86-unknown-bootloader/bootloader/bootloader target/bootloader.bin
+cargo b --profile bootloader -p bootloader --target bootloader/x86-unknown-bootloader.json -Zjson-target-spec -Zbuild-std=core || exit
+objcopy -I elf32-i386 -O binary target/x86-unknown-bootloader/bootloader/bootloader target/bootloader.bin || exit
 
 # Build the kernel, it will be stored at ./target/x86_64-unknown-none/debug/kernel
 # TODO handle release mode
-cargo b -p kernel --target kernel/i686-timesinkos-kernel.json -Zbuild-std=core || exit
-objcopy -I elf64-x86-64 -O binary target/i686-timesinkos-kernel/debug/kernel target/kernel.bin
+cargo b -p kernel --target kernel/i686-timesinkos-kernel.json -Zjson-target-spec -Zbuild-std=core || exit
+#objcopy -I elf64-x86-64 -O binary target/i686-timesinkos-kernel/debug/kernel target/kernel.bin || exit
+objcopy -I elf32-i386 -O binary target/i686-timesinkos-kernel/debug/kernel target/kernel.bin || exit
 
 bootloader="./target/bootloader.bin"
 kernel="./target/kernel.bin"

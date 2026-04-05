@@ -11,7 +11,7 @@
 use core::arch::global_asm;
 use core::panic::PanicInfo;
 
-// This contains the master boot record, whihc is what we get booted into! It loads this rust
+// This contains the master boot record, which is what we get booted into! It loads this rust
 // program into memory, then jumps to the `boot` function.
 global_asm!(include_str!("mbr.S"));
 

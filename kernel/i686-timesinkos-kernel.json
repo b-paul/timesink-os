@@ -6,6 +6,6 @@
     "linker": "rust-lld",
     "linker-flavor": "ld.lld",
     "llvm-target": "i686-unknown-none",
-    "target-pointer-width": "32",
+    "target-pointer-width": 32,
     "os": "timesink-os"
 }
