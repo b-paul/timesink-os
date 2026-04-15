@@ -156,7 +156,7 @@ fn jump_to_kernel<T>(_prot_mode: &modes::ProtectedMode<T>) {
         );
         // Get the kernel start address and call it!
         core::arch::asm!(
-            "pop {0:e}",
+            "pop {0:x}",
             // It's super cursed, but we have to write :x in the call parameter, and despite that
             // it will use a 32 bit register in the call. If we write :e it compiles to use a 16
             // bit register...
