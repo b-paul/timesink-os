@@ -25,7 +25,7 @@ echo "ret" > $KERNEL_NASM
 nasm -o $KERNEL_BIN $KERNEL_NASM || exit
 
 # then we actually build the image
-IMAGE_BIN="$BUILD_DIR/image.bin"
+IMAGE_BIN=$2
 
 dd if=$BOOTLOADER_BIN of=$IMAGE_BIN bs=512
 dd if=$KERNEL_BIN of=$IMAGE_BIN conv=notrunc bs=512 seek=128
@@ -41,5 +41,3 @@ int_to_bytes 0x100000 | dd of=$IMAGE_BIN conv=notrunc bs=1 seek=392 # idk random
 int_to_bytes 1 | dd of=$IMAGE_BIN conv=notrunc bs=1 seek=400
 # kernel_block
 int_to_bytes 128 | dd of=$IMAGE_BIN conv=notrunc bs=1 seek=408
-
-qemu-system-i386 -hda $IMAGE_BIN
