@@ -1,12 +1,12 @@
 [workspace]
 
 members = [
-    'bootloader', "kernel",
+    'bootloaders/mbr-32bit', "kernel",
 ]
 
 resolver = "3"
 
-[profile.bootloader]
+[profile.mbr-32bit]
 inherits = "dev"
 # "Unwinding panics are not supported without std" according to cargo
 panic = "abort"

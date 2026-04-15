@@ -9,8 +9,8 @@ int_to_bytes() {
 }
 
 BUILD_DIR=$(dirname $1)
-ELF="$BUILD_DIR/bootloader"
-BOOTLOADER_BIN="$BUILD_DIR/bootloader.bin"
+ELF="$BUILD_DIR/mbr-32bit"
+BOOTLOADER_BIN="$BUILD_DIR/mbr-32bit.bin"
 
 # Convert the linked elf into a raw binary file
 objcopy -I elf32-i386 -O binary $ELF $BOOTLOADER_BIN || exit

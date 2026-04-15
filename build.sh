@@ -9,18 +9,19 @@ int_to_bytes() {
     printf "0: %.8x" $1 | sed -E 's/0: (..)(..)(..)(..)/0: \4\3\2\1/' | xxd -r -g0
 }
 
-# Build the bootloader, it will be stored at ./target/x86-unknown-bootloader/bootloader/bootloader as an elf then copied as a raw binary.
-cargo b -p bootloader --target bootloader/x86-unknown-bootloader.json -Zjson-target-spec -Zbuild-std=core || exit
-objcopy -I elf32-i386 -O binary target/x86-unknown-bootloader/debug/bootloader target/bootloader.bin || exit
+bootloader="./target/mbr-32bit.bin"
+kernel="./target/kernel.bin"
 
-# Build the kernel, it will be stored at ./target/x86_64-unknown-none/debug/kernel
+# Build the bootloader
+cargo b -p mbr-32bit --target bootloaders/mbr-32bit/mbr-32bit-bootloader.json -Zjson-target-spec -Zbuild-std=core || exit
+objcopy -I elf32-i386 -O binary target/mbr-32bit-bootloader/debug/mbr-32bit $bootloader || exit
+
+# Build the kernel
 # TODO handle release mode
 cargo b -p kernel --target kernel/i686-timesinkos-kernel.json -Zjson-target-spec -Zbuild-std=core || exit
 #objcopy -I elf64-x86-64 -O binary target/i686-timesinkos-kernel/debug/kernel target/kernel.bin || exit
-objcopy -I elf32-i386 -O binary target/i686-timesinkos-kernel/debug/kernel target/kernel.bin || exit
+objcopy -I elf32-i386 -O binary target/i686-timesinkos-kernel/debug/kernel $kernel || exit
 
-bootloader="./target/bootloader.bin"
-kernel="./target/kernel.bin"
 
 bootloader_size=$(wc -c $bootloader | cut -f1 -d' ')
 bootloader_sectors=$((($bootloader_size - 1)/512))
