@@ -1,3 +1,11 @@
 [build]
 # Temporary, I may want to use a different target later
-target = "x86_64-unknown-none"
+#target = "x86_64-unknown-none"
+target = "i686-timesinkos-kernel.json"
+
+[unstable]
+build-std = ["core"]
+json-target-spec = true
+
+[target.'cfg(target_os = "timesink-os")']
+runner = "./scripts/run-mbr-32bit.sh"
